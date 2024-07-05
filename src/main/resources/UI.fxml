@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import java.lang.String?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.UI.ZipperController"
+            prefHeight="400.0" prefWidth="600.0">
+    <Label text="选择类型：" layoutX="10" layoutY="14"/>
+    <ComboBox fx:id="selectionType" layoutX="80" layoutY="10" prefWidth="120">
+        <items>
+            <FXCollections fx:factory="observableArrayList">
+                <String fx:value="文件"/>
+                <String fx:value="文件夹"/>
+            </FXCollections>
+        </items>
+    </ComboBox>
+
+    <Label text="选择文件/文件夹：" layoutX="10" layoutY="54"/>
+    <TextField fx:id="filePathField" layoutX="130" layoutY="50" prefWidth="250"/>
+    <Button text="浏览" layoutX="390" layoutY="50" onAction="#handleBrowse"/>
+
+    <Label text="目标目录：" layoutX="10" layoutY="94"/>
+    <TextField fx:id="targetPathField" layoutX="80" layoutY="90" prefWidth="300"/>
+    <Button text="浏览" layoutX="390" layoutY="90" onAction="#handleBrowseTarget"/>
+
+    <Button text="解压缩" layoutX="200" layoutY="130" onAction="#handleUnzip"/>
+</AnchorPane>
