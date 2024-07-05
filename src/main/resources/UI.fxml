@@ -26,5 +26,6 @@
     <TextField fx:id="targetPathField" layoutX="80" layoutY="90" prefWidth="300"/>
     <Button text="浏览" layoutX="390" layoutY="90" onAction="#handleBrowseTarget"/>
 
-    <Button text="解压缩" layoutX="200" layoutY="130" onAction="#handleUnzip"/>
+    <Button fx:id="compress" text="压缩" layoutX="400" layoutY="130" onAction="#handleZip"/>
+    <Button fx:id="decompress" text="解压" layoutX="200" layoutY="130" onAction="#handleZip"/>
 </AnchorPane>

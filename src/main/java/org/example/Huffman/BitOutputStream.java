@@ -1,59 +1,60 @@
 package org.example.Huffman;
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.OutputStream;
 
-public class BitOutputStream implements Closeable, Flushable {
-    private OutputStream out;
+/**
+ * 自定义文件输出流
+ */
+public class BitOutputStream implements Closeable {
+    private static final int BYTE_SIZE = 8;
+    private BufferedOutputStream out;
+    /**
+     * 当前字节
+     */
     private int currentByte;
-    private int numBitsInCurrentByte;
+    /**
+     * 当前字节已填充的位数
+     */
+    private int numBitsFilled;
 
-    // todo 优化写入缓冲区，加快文件写入速度
-    public BitOutputStream(String sourceFilePath, String targetDirectory) throws IOException {
-        File sourceFile = new File(sourceFilePath);
-        String outputFilePath = targetDirectory + File.separator + sourceFile.getName() + ".hzip";
-        this.out = new FileOutputStream(outputFilePath);
+    public BitOutputStream(OutputStream out, int bufferSize) {
+        this.out = new BufferedOutputStream(out, bufferSize);
         this.currentByte = 0;
-        this.numBitsInCurrentByte = 0;
+        this.numBitsFilled = 0;
     }
 
+    /**
+     * 按位写入
+     *
+     * @param bit 要写入的位（true 表示 1，false 表示 0）
+     * @throws IOException 如果发生 I/O 错误
+     */
     public void writeBit(boolean bit) throws IOException {
-        if (bit) {
-            currentByte = currentByte | (1 << (7 - numBitsInCurrentByte));
+        currentByte = (currentByte << 1) | (bit ? 1 : 0);
+        numBitsFilled++;
+        if (numBitsFilled == BYTE_SIZE) {
+            out.write(currentByte);
+            numBitsFilled = 0;
+            currentByte = 0;
         }
-        numBitsInCurrentByte++;
-        if (numBitsInCurrentByte == 8) {
-            flushCurrentByte();
-        }
     }
 
-    public void writeByte(byte b) throws IOException {
-        out.write(b);
-    }
-
-    public void writeInt(int value) throws IOException {
-        out.write((value >>> 24) & 0xFF);
-        out.write((value >>> 16) & 0xFF);
-        out.write((value >>> 8) & 0xFF);
-        out.write(value & 0xFF);
-    }
-
-    @Override
-    public void flush() throws IOException {
-        flushCurrentByte();
-        out.flush();
-    }
-
-    @Override
+    /**
+     * 关闭输出流，确保所有未写入的位被写入
+     *
+     * @throws IOException 如果发生 I/O 错误
+     */
     public void close() throws IOException {
-        flush();
+        if (numBitsFilled > 0) {
+            currentByte <<= (BYTE_SIZE - numBitsFilled);
+            out.write(currentByte);
+        }
         out.close();
     }
-
-    private void flushCurrentByte() throws IOException {
-        if (numBitsInCurrentByte > 0) {
-            out.write(currentByte);
-            currentByte = 0;
-            numBitsInCurrentByte = 0;
-        }
-    }
 }
+
+
+

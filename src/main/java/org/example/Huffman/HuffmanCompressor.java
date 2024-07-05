@@ -1,81 +1,122 @@
 package org.example.Huffman;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
 public class HuffmanCompressor {
-    private Map<Byte, Integer> frequencyMap;
+    /**
+     * 缓冲区大小
+     */
+    private static final int BUFFER_SIZE = 8192;
+    /**
+     * 频率映射表
+     */
+    private Map<Byte, Integer> weightMap;
+    /**
+     * 哈夫曼编码表
+     */
     private Map<Byte, String> huffmanCodes;
+    /**
+     * 哈夫曼树
+     */
     private HuffmanTree huffmanTree;
 
     public HuffmanCompressor() {
-        this.frequencyMap = new HashMap<>();
+        this.weightMap = new HashMap<>();
         this.huffmanCodes = new HashMap<>();
     }
 
-    public void compressFile(String inputFilePath, String outputFilePath) throws IOException {
-        buildFrequencyMap(inputFilePath);
-        this.huffmanTree = new HuffmanTree(frequencyMap);
-        this.huffmanCodes = huffmanTree.getHuffmanCodes();
-
-        // todo 在压缩时，将该文件对应的哈夫曼树和文件类型存储到文件中
-
-        try (FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bos = new BitOutputStream(inputFilePath, outputFilePath)) {
-
-            bos.writeInt(frequencyMap.size());
-            for (Map.Entry<Byte, Integer> entry : frequencyMap.entrySet()) {
-                bos.writeByte(entry.getKey());
-                bos.writeInt(entry.getValue());
-            }
-
-            int b;
-            while ((b = fis.read()) != -1) {
-                String code = huffmanCodes.get((byte) b);
-                for (char bit : code.toCharArray()) {
-                    bos.writeBit(bit == '1');
-                }
-            }
-        }
-    }
-
+    /**
+     * 构建频率表
+     *
+     * @param inputFilePath 输入文件路径
+     * @throws IOException 如果发生 I/O 错误
+     */
     private void buildFrequencyMap(String inputFilePath) throws IOException {
         try (FileInputStream fis = new FileInputStream(inputFilePath)) {
             int b;
             while ((b = fis.read()) != -1) {
                 byte byteValue = (byte) b;
-                frequencyMap.put(byteValue, frequencyMap.getOrDefault(byteValue, 0) + 1);
+                weightMap.put(byteValue, weightMap.getOrDefault(byteValue, 0) + 1);
             }
         }
     }
 
-    public void decompressFile(String compressedFilePath, String targetDirectory) throws IOException {
-        // todo 在解压时，读取文件中的哈夫曼树和文件类型
+
+    /**
+     * 压缩文件
+     *
+     * @param inputFilePath   输入文件路径
+     * @param targetDirectory 目标目录
+     * @throws IOException 如果发生 I/O 错误
+     */
+    public void compressFile(String inputFilePath, String targetDirectory) throws IOException {
+        buildFrequencyMap(inputFilePath);
+        this.huffmanTree = new HuffmanTree(weightMap);
+        this.huffmanCodes = huffmanTree.getHuffmanCodes();
+
+        String compressedFilePath = targetDirectory + File.separator + new File(inputFilePath).getName() + ".hzip";
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE); ObjectOutputStream oos = new ObjectOutputStream(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
+
+            // 写入频率表大小和条目
+            oos.writeInt(weightMap.size());
+            for (Map.Entry<Byte, Integer> entry : weightMap.entrySet()) {
+                oos.writeByte(entry.getKey());
+                oos.writeInt(entry.getValue());
+            }
+
+            // 序列化并写入哈夫曼树
+            oos.writeObject(huffmanTree.getRoot());
+            oos.flush();
+
+            // 写入编码后的文件内容
+            int b;
+            while ((b = fis.read()) != -1) {
+                String code = huffmanCodes.get((byte) b);
+                for (char bit : code.toCharArray()) {
+                    bitOut.writeBit(bit == '1');
+                }
+            }
+        }
+    }
+
+    /**
+     * 解压文件
+     *
+     * @param compressedFilePath 压缩文件路径
+     * @param targetDirectory    目标目录
+     * @throws IOException            如果发生 I/O 错误
+     * @throws ClassNotFoundException 如果类未找到
+     */
+    public void decompressFile(String compressedFilePath, String targetDirectory) throws IOException, ClassNotFoundException {
         String outputFilePath = compressedFilePath;
+        // 判断是否为待解压文件
         if (outputFilePath.endsWith(".hzip")) {
             outputFilePath = outputFilePath.substring(0, outputFilePath.length() - 5);
         }
         outputFilePath = targetDirectory + File.separator + new File(outputFilePath).getName();
-        try (BitInputStream bis = new BitInputStream(new FileInputStream(compressedFilePath));
-             FileOutputStream fos = new FileOutputStream(outputFilePath)) {
 
-            int mapSize = bis.readInt();
-            frequencyMap = new HashMap<>();
+        try (FileInputStream fis = new FileInputStream(compressedFilePath); BufferedInputStream bis = new BufferedInputStream(fis, BUFFER_SIZE); ObjectInputStream ois = new ObjectInputStream(bis); FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+
+            // 读取频率表大小和条目
+            int mapSize = ois.readInt();
+            weightMap = new HashMap<>();
             for (int i = 0; i < mapSize; i++) {
-                byte key = bis.readByte();
-                int value = bis.readInt();
-                frequencyMap.put(key, value);
+                byte key = ois.readByte();
+                int value = ois.readInt();
+                weightMap.put(key, value);
             }
 
-            this.huffmanTree = new HuffmanTree(frequencyMap);
-            HuffmanNode root = huffmanTree.getRoot();
+            // 反序列化并重建哈夫曼树
+            HuffmanNode root = (HuffmanNode) ois.readObject();
+            this.huffmanTree = new HuffmanTree(root);
 
+            // 使用哈夫曼树解码文件内容
+            BitInputStream bitIn = new BitInputStream(bis, BUFFER_SIZE);
             HuffmanNode current = root;
             while (true) {
-                int bit = bis.readBit();
+                int bit = bitIn.readBit();
                 if (bit == -1) {
                     break;
                 }
@@ -89,7 +130,7 @@ public class HuffmanCompressor {
                     current = root;
                 }
             }
+            bitIn.close();
         }
     }
-
 }
