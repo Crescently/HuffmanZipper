@@ -1,4 +1,4 @@
-package org.example.UI;
+package org.example.ui;
 
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
@@ -8,12 +8,13 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import org.example.FileUtil.FileUtil;
 import org.example.constant.OperateType;
+import org.example.util.FileUtil;
 
 import java.io.File;
 
-import static org.example.FileUtil.FileUtil.FileTypeReader;
+import static org.example.util.FileUtil.FileTypeReader;
+
 
 public class ZipperController {
     public Button compress;

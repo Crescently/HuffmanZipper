@@ -1,6 +1,7 @@
-package org.example.Huffman;
+package org.example.entity.huffman;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -9,6 +10,7 @@ import java.io.Serializable;
  * 哈夫曼树节点
  */
 @Getter
+@NoArgsConstructor
 public class HuffmanNode implements Comparable<HuffmanNode>, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

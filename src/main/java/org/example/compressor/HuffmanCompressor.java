@@ -1,4 +1,9 @@
-package org.example.Huffman;
+package org.example.compressor;
+
+import org.example.entity.huffman.HuffmanNode;
+import org.example.entity.huffman.HuffmanTree;
+import org.example.entity.io.BitInputStream;
+import org.example.entity.io.BitOutputStream;
 
 import java.io.*;
 import java.util.HashMap;

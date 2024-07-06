@@ -1,4 +1,4 @@
-package org.example.Huffman;
+package org.example.entity.huffman;
 
 import lombok.Getter;
 

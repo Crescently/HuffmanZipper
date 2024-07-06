@@ -1,4 +1,4 @@
-package org.example.Huffman;
+package org.example.entity.io;
 
 import java.io.BufferedOutputStream;
 import java.io.Closeable;

@@ -1,4 +1,4 @@
-package org.example.FileEntity;
+package org.example.entity.file;
 
 import lombok.Data;
 

@@ -3,13 +3,15 @@ package org.example.constant;
 /**
  * 操作常量表示
  */
-public class OperateType {
+public enum OperateType {
     /**
      * 压缩
      */
-    public static final String COMPRESS = "compress";
+    COMPRESS,
     /**
      * 解压
      */
-    public static final String DECOMPRESS = "decompress";
+    DECOMPRESS
+
+
 }
