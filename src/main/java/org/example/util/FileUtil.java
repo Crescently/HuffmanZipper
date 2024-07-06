@@ -1,5 +1,6 @@
 package org.example.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.compressor.HuffmanCompressor;
 import org.example.constant.OperateType;
 import org.example.entity.file.DirectoryStructure;
@@ -12,6 +13,7 @@ import java.util.List;
 /**
  * 文件操作工具类
  */
+@Slf4j
 public class FileUtil {
 
 
@@ -37,7 +39,6 @@ public class FileUtil {
         if (file.exists()) {
             // 判断文件时单文件还是文件夹
             if (file.isFile()) {
-                System.out.println("FileUtil-40:The path is a file.");
                 // 对单文件的哈夫曼压缩
                 HuffmanCompressor compressor = new HuffmanCompressor();
                 FileBasicInfo fileBasicInfo = FileBasicInfo.getInstance();
@@ -52,7 +53,7 @@ public class FileUtil {
                         compressor.decompressFile(inputFilePath, outputFilePath);
                     }
                 } catch (Exception e) {
-                    System.out.println("FileUtil-54: Error compressing file: " + e.getMessage());
+                    log.error("FileUtil-54: Error compressing file: {}", e.getMessage());
                 }
             } else if (file.isDirectory()) {
                 System.out.println("The path is a directory.");
@@ -68,10 +69,10 @@ public class FileUtil {
                 }
                 // todo 对文件夹的解压缩
             } else {
-                System.out.println("FileUtil-70: The path is neither a file nor a directory.");
+                log.error("FileUtil-70: The path is neither a file nor a directory.");
             }
         } else {
-            System.out.println("FileUtil-73: The path does not exist.");
+            log.error("FileUtil-73: The path does not exist.");
         }
     }
 

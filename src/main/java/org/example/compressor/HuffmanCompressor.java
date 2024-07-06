@@ -1,5 +1,8 @@
 package org.example.compressor;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import org.example.entity.huffman.HuffmanNode;
 import org.example.entity.huffman.HuffmanTree;
 import org.example.entity.io.BitInputStream;
@@ -13,11 +16,12 @@ public class HuffmanCompressor {
     /**
      * 缓冲区大小
      */
-    private static final int BUFFER_SIZE = 8192;
+    public static final int BUFFER_SIZE = 8192;
     /**
      * 频率映射表
      */
-    private Map<Byte, Integer> weightMap;
+    private final Map<Byte, Integer> weightMap;
+    private final Kryo kryo;
     /**
      * 哈夫曼编码表
      */
@@ -30,6 +34,9 @@ public class HuffmanCompressor {
     public HuffmanCompressor() {
         this.weightMap = new HashMap<>();
         this.huffmanCodes = new HashMap<>();
+        this.kryo = new Kryo();
+        kryo.register(HuffmanNode.class);
+        kryo.register(HuffmanTree.class);
     }
 
     /**
@@ -62,18 +69,15 @@ public class HuffmanCompressor {
         this.huffmanCodes = huffmanTree.getHuffmanCodes();
 
         String compressedFilePath = targetDirectory + File.separator + new File(inputFilePath).getName() + ".hzip";
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE); ObjectOutputStream oos = new ObjectOutputStream(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
+             BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
+             Output output = new Output(bos);
+             FileInputStream fis = new FileInputStream(inputFilePath);
+             BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
 
-            // 写入频率表大小和条目
-            oos.writeInt(weightMap.size());
-            for (Map.Entry<Byte, Integer> entry : weightMap.entrySet()) {
-                oos.writeByte(entry.getKey());
-                oos.writeInt(entry.getValue());
-            }
-
-            // 序列化并写入哈夫曼树
-            oos.writeObject(huffmanTree.getRoot());
-            oos.flush();
+            // 哈夫曼树序列化并写入
+            kryo.writeClassAndObject(output, huffmanTree.getRoot());
+            output.flush();
 
             // 写入编码后的文件内容
             int b;
@@ -91,34 +95,30 @@ public class HuffmanCompressor {
      *
      * @param compressedFilePath 压缩文件路径
      * @param targetDirectory    目标目录
-     * @throws IOException            如果发生 I/O 错误
-     * @throws ClassNotFoundException 如果类未找到
+     * @throws IOException 如果发生 I/O 错误
      */
-    public void decompressFile(String compressedFilePath, String targetDirectory) throws IOException, ClassNotFoundException {
+    public void decompressFile(String compressedFilePath, String targetDirectory) throws IOException {
         String outputFilePath = compressedFilePath;
         // 判断是否为待解压文件
         if (outputFilePath.endsWith(".hzip")) {
             outputFilePath = outputFilePath.substring(0, outputFilePath.length() - 5);
         }
         outputFilePath = targetDirectory + File.separator + new File(outputFilePath).getName();
+        File tempFile = File.createTempFile("decompressed", null);
+        tempFile.deleteOnExit();
 
-        try (FileInputStream fis = new FileInputStream(compressedFilePath); BufferedInputStream bis = new BufferedInputStream(fis, BUFFER_SIZE); ObjectInputStream ois = new ObjectInputStream(bis); FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+        try (FileInputStream fis = new FileInputStream(compressedFilePath);
+             BufferedInputStream bis = new BufferedInputStream(fis, BUFFER_SIZE);
+             Input input = new Input(bis);
+             FileOutputStream fos = new FileOutputStream(outputFilePath)) {
 
-            // 读取频率表大小和条目
-            int mapSize = ois.readInt();
-            weightMap = new HashMap<>();
-            for (int i = 0; i < mapSize; i++) {
-                byte key = ois.readByte();
-                int value = ois.readInt();
-                weightMap.put(key, value);
-            }
 
             // 反序列化并重建哈夫曼树
-            HuffmanNode root = (HuffmanNode) ois.readObject();
+            HuffmanNode root = (HuffmanNode) kryo.readClassAndObject(input);
             this.huffmanTree = new HuffmanTree(root);
 
-            // 使用哈夫曼树解码文件内容
-            BitInputStream bitIn = new BitInputStream(bis, BUFFER_SIZE);
+
+            BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
             HuffmanNode current = root;
             while (true) {
                 int bit = bitIn.readBit();
