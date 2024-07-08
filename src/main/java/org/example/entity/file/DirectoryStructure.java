@@ -3,13 +3,21 @@ package org.example.entity.file;
 import lombok.Data;
 
 import java.io.File;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * 文件目录结构类
  */
 @Data
-public class DirectoryStructure {
+public class DirectoryStructure implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+    /**
+     * 文件根节点
+     */
     private FileNode root;
 
     private DirectoryStructure() {
@@ -30,12 +38,6 @@ public class DirectoryStructure {
         return node;
     }
 
-    public void printStructure(FileNode node, String indent) {
-        System.out.println(indent + (node.isFile() ? "File: " : "Dir: ") + node.getName());
-        for (FileNode child : node.getChildren()) {
-            printStructure(child, indent + "  ");
-        }
-    }
 
     private static final class InstanceHolder {
         private static final DirectoryStructure instance = new DirectoryStructure();

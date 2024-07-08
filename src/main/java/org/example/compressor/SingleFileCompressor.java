@@ -3,6 +3,7 @@ package org.example.compressor;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import lombok.extern.slf4j.Slf4j;
 import org.example.entity.huffman.HuffmanNode;
 import org.example.entity.huffman.HuffmanTree;
 import org.example.entity.io.BitInputStream;
@@ -12,7 +13,8 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HuffmanCompressor {
+@Slf4j
+public class SingleFileCompressor {
     /**
      * 缓冲区大小
      */
@@ -31,7 +33,7 @@ public class HuffmanCompressor {
      */
     private HuffmanTree huffmanTree;
 
-    public HuffmanCompressor() {
+    public SingleFileCompressor() {
         this.weightMap = new HashMap<>();
         this.huffmanCodes = new HashMap<>();
         this.kryo = new Kryo();
@@ -67,7 +69,8 @@ public class HuffmanCompressor {
         buildFrequencyMap(inputFilePath);
         this.huffmanTree = new HuffmanTree(weightMap);
         this.huffmanCodes = huffmanTree.getHuffmanCodes();
-
+        // 压缩文件
+        // todo 压缩时去掉原文件的后缀
         String compressedFilePath = targetDirectory + File.separator + new File(inputFilePath).getName() + ".hzip";
         try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
              BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
@@ -87,6 +90,7 @@ public class HuffmanCompressor {
                     bitOut.writeBit(bit == '1');
                 }
             }
+            log.info("Compressed file finish");
         }
     }
 
@@ -102,13 +106,12 @@ public class HuffmanCompressor {
         // 判断是否为待解压文件
         if (outputFilePath.endsWith(".hzip")) {
             outputFilePath = outputFilePath.substring(0, outputFilePath.length() - 5);
+        } else {
+            throw new IllegalArgumentException("The file is not a compressed file.");
         }
         outputFilePath = targetDirectory + File.separator + new File(outputFilePath).getName();
-        File tempFile = File.createTempFile("decompressed", null);
-        tempFile.deleteOnExit();
 
-        try (FileInputStream fis = new FileInputStream(compressedFilePath);
-             BufferedInputStream bis = new BufferedInputStream(fis, BUFFER_SIZE);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE);
              Input input = new Input(bis);
              FileOutputStream fos = new FileOutputStream(outputFilePath)) {
 
@@ -116,7 +119,6 @@ public class HuffmanCompressor {
             // 反序列化并重建哈夫曼树
             HuffmanNode root = (HuffmanNode) kryo.readClassAndObject(input);
             this.huffmanTree = new HuffmanTree(root);
-
 
             BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
             HuffmanNode current = root;
@@ -135,6 +137,7 @@ public class HuffmanCompressor {
                     current = root;
                 }
             }
+            log.info("Decompressed file finish");
             bitIn.close();
         }
     }

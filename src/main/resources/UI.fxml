@@ -17,7 +17,7 @@
             </FXCollections>
         </items>
     </ComboBox>
-
+<!--  todo 美化页面样式  -->
     <Label text="选择文件/文件夹：" layoutX="10" layoutY="54"/>
     <TextField fx:id="filePathField" layoutX="130" layoutY="50" prefWidth="250"/>
     <Button text="浏览" layoutX="390" layoutY="50" onAction="#handleBrowse"/>
@@ -26,7 +26,17 @@
     <TextField fx:id="targetPathField" layoutX="80" layoutY="90" prefWidth="300"/>
     <Button text="浏览" layoutX="390" layoutY="90" onAction="#handleBrowseTarget"/>
 
-    <Button fx:id="compress" text="压缩" layoutX="400" layoutY="130" onAction="#handleZip"/>
-    <Button fx:id="decompress" text="解压" layoutX="200" layoutY="130" onAction="#handleZip"/>
+    <Label text="选择解压类型：" layoutX="10" layoutY="154"/>
+    <ComboBox fx:id="selectFileType" layoutX="110" layoutY="150" prefWidth="120">
+        <items>
+            <FXCollections fx:factory="observableArrayList">
+                <String fx:value="文件"/>
+                <String fx:value="文件夹"/>
+            </FXCollections>
+        </items>
+    </ComboBox>
+
+    <Button fx:id="compress" text="压缩" layoutX="400" layoutY="200" onAction="#handleZip"/>
+    <Button fx:id="decompress" text="解压" layoutX="200" layoutY="200" onAction="#handleZip"/>
 
 </AnchorPane>

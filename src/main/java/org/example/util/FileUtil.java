@@ -1,14 +1,13 @@
 package org.example.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.compressor.HuffmanCompressor;
+import org.example.compressor.DirectoryCompressor;
+import org.example.compressor.SingleFileCompressor;
+import org.example.constant.FileType;
 import org.example.constant.OperateType;
-import org.example.entity.file.DirectoryStructure;
 import org.example.entity.file.FileBasicInfo;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 文件操作工具类
@@ -31,69 +30,76 @@ public class FileUtil {
 
     /**
      * 文件类型识别
-     *
      * @param filePath 文件路径
+     * @param chosenType 操作类型
+     * @param fileType 解压后文件类型
      */
-    public static void FileTypeReader(String filePath, OperateType chosenType) {
+    public static void FileTypeReader(String filePath, OperateType chosenType, FileType fileType) {
         File file = new File(filePath);
-        if (file.exists()) {
-            // 判断文件时单文件还是文件夹
-            if (file.isFile()) {
-                // 对单文件的哈夫曼压缩
-                HuffmanCompressor compressor = new HuffmanCompressor();
-                FileBasicInfo fileBasicInfo = FileBasicInfo.getInstance();
-                String inputFilePath = fileBasicInfo.getFilePath();
-                String outputFilePath = fileBasicInfo.getTargetPath();
-                try {
-                    // 判断操作类型是压缩还是解压
-                    if (OperateType.COMPRESS.equals(chosenType)) {
-
-                        compressor.compressFile(inputFilePath, outputFilePath);
-                    } else if (OperateType.DECOMPRESS.equals(chosenType)) {
-                        compressor.decompressFile(inputFilePath, outputFilePath);
-                    }
-                } catch (Exception e) {
-                    log.error("FileUtil-54: Error compressing file: {}", e.getMessage());
-                }
-            } else if (file.isDirectory()) {
-                System.out.println("The path is a directory.");
-                // 记录文件夹结构
-                DirectoryStructure ds = DirectoryStructure.getInstance();
-                ds.buildTree(file);
-                ds.printStructure(ds.getRoot(), "");
-
-                // 递归读取文件夹内容
-                List<File> allFiles = listAllFiles(file);
-                for (File f : allFiles) {
-                    System.out.println("File: " + f.getPath());
-                }
-                // todo 对文件夹的解压缩
-            } else {
-                log.error("FileUtil-70: The path is neither a file nor a directory.");
-            }
-        } else {
+        if (!file.exists()) {
             log.error("FileUtil-73: The path does not exist.");
+            return;
+        }
+        FileBasicInfo fileBasicInfo = FileBasicInfo.getInstance();
+        String inputPath = fileBasicInfo.getFilePath();
+        String outputPath = fileBasicInfo.getTargetPath();
+        SingleFileCompressor singleFileCompressor = new SingleFileCompressor();
+        DirectoryCompressor directoryCompressor = new DirectoryCompressor();
+        try {
+            if (chosenType.equals(OperateType.COMPRESS)) {
+                if (file.isFile()) {
+                    handleFile(singleFileCompressor, inputPath, outputPath, chosenType);
+                } else if (file.isDirectory()) {
+                    handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
+                } else {
+                    log.error("FileUtil-70: The path is neither a file nor a directory.");
+                }
+            } else if (chosenType.equals(OperateType.DECOMPRESS)) {
+                if (fileType.equals(FileType.SINGLE_FILE)) {
+                    handleFile(singleFileCompressor, inputPath, outputPath, chosenType);
+                } else if (fileType.equals(FileType.DIRECTORY)) {
+                    handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
+                } else {
+                    log.error("file decompress type error");
+                }
+            }
+        } catch (Exception e) {
+            log.error("FileUtil-54: Error processing file or directory: {}", e.getMessage());
         }
     }
 
     /**
-     * 获取目录下所有文件
+     * 处理单个文件的压缩或解压
      *
-     * @param dir 目录
-     * @return 文件列表
+     * @param singleFileCompressor HuffmanCompressor 实例
+     * @param inputPath            输入文件路径
+     * @param outputPath           输出文件路径
+     * @param chosenType           操作类型（压缩或解压）
+     * @throws Exception 处理过程中可能抛出的异常
      */
-    public static List<File> listAllFiles(File dir) {
-        List<File> fileList = new ArrayList<>();
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    fileList.add(file);
-                } else if (file.isDirectory()) {
-                    fileList.addAll(listAllFiles(file));
-                }
-            }
+    private static void handleFile(SingleFileCompressor singleFileCompressor, String inputPath, String outputPath, OperateType chosenType) throws Exception {
+        if (OperateType.COMPRESS.equals(chosenType)) {
+            singleFileCompressor.compressFile(inputPath, outputPath);
+        } else if (OperateType.DECOMPRESS.equals(chosenType)) {
+            singleFileCompressor.decompressFile(inputPath, outputPath);
         }
-        return fileList;
     }
+
+    /**
+     * 处理文件夹的压缩或解压
+     *
+     * @param directoryCompressor HuffmanCompressorAboutDir 实例
+     * @param inputPath           输入文件夹路径
+     * @param outputPath          输出文件夹路径
+     * @param chosenType          操作类型（压缩或解压）
+     * @throws Exception 处理过程中可能抛出的异常
+     */
+    private static void handleDirectory(DirectoryCompressor directoryCompressor, String inputPath, String outputPath, OperateType chosenType) throws Exception {
+        if (OperateType.COMPRESS.equals(chosenType)) {
+            directoryCompressor.compressDirectory(inputPath, outputPath);
+        } else if (OperateType.DECOMPRESS.equals(chosenType)) {
+            directoryCompressor.decompressDirectory(inputPath, outputPath);
+        }
+    }
+
 }

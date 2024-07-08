@@ -8,6 +8,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
+import org.example.constant.FileType;
 import org.example.constant.OperateType;
 import org.example.util.FileUtil;
 
@@ -28,6 +29,9 @@ public class ZipperController {
     private TextField targetPathField;
 
     @FXML
+    private ComboBox<String> selectFileType;
+
+    @FXML
     private void handleBrowse() {
         String type = selectionType.getValue();
         if (type.equals("文件")) {
@@ -37,7 +41,6 @@ public class ZipperController {
                 filePathField.setText(selectedFile.getAbsolutePath());
             }
         } else if (type.equals("文件夹")) {
-            this.handleBrowseTarget();
             DirectoryChooser directoryChooser = new DirectoryChooser();
             File selectedDirectory = directoryChooser.showDialog(null);
             if (selectedDirectory != null) {
@@ -59,17 +62,24 @@ public class ZipperController {
     private void handleZip(ActionEvent event) {
         String filePath = filePathField.getText();
         String targetPath = targetPathField.getText();
-
+        String type = selectFileType.getValue();
+        FileType chosen = null;
+        if ("文件".equals(type)) {
+            chosen = FileType.SINGLE_FILE;
+        } else if ("文件夹".equals(type)) {
+            chosen = FileType.DIRECTORY;
+        }
         // 创建解压任务并在新线程中运行 防止界面卡死
+        FileType finalChosen = chosen;
         Task<Void> unzipTask = new Task<>() {
             @Override
             protected Void call() {
                 if (filePath != null && targetPath != null) {
                     FileUtil.getFileInfo(filePath, targetPath);
                     if (event.getSource() == compress) {
-                        FileTypeReader(filePath, OperateType.COMPRESS);
+                        FileTypeReader(filePath, OperateType.COMPRESS, finalChosen);
                     } else if (event.getSource() == decompress) {
-                        FileTypeReader(filePath, OperateType.DECOMPRESS);
+                        FileTypeReader(filePath, OperateType.DECOMPRESS, finalChosen);
                     }
 
                 }

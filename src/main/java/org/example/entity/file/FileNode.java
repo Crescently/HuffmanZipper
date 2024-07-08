@@ -1,7 +1,10 @@
 package org.example.entity.file;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,7 +12,11 @@ import java.util.List;
  * 文件节点类
  */
 @Data
-public class FileNode {
+@NoArgsConstructor
+public class FileNode implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
     /**
      * 节点名
      */
@@ -23,21 +30,23 @@ public class FileNode {
      */
     private List<FileNode> children;
     /**
-     * 文件内容偏移量
+     * 文件内容大小
      */
-    private long offset;
+    private long fileSize;
 
     public FileNode(String name, boolean isFile) {
         this.name = name;
         this.isFile = isFile;
         this.children = new ArrayList<>();
-        this.offset = -1;
     }
 
 
     public void addChild(FileNode child) {
         this.children.add(child);
     }
+
+
+
 
 }
 

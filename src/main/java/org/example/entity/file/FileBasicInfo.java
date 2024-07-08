@@ -11,7 +11,6 @@ public class FileBasicInfo {
      * 待压缩文件路径
      */
     private String filePath;
-
     /**
      * 压缩后文件输出目录
      */
