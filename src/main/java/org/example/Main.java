@@ -1,6 +1,6 @@
 package org.example;
 
-import org.example.ui.HuffmanZipperStarter;
+import org.example.view.HuffmanZipperStarter;
 
 public class Main {
     public static void main(String[] args) {

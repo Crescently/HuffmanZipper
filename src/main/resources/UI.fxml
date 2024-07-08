@@ -6,7 +6,7 @@
 <?import java.lang.String?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="org.example.ui.ZipperController"
+            fx:controller="org.example.view.ZipperController"
             prefHeight="400.0" prefWidth="600.0">
     <Label text="选择类型：" layoutX="10" layoutY="14"/>
     <ComboBox fx:id="selectionType" layoutX="80" layoutY="10" prefWidth="120">

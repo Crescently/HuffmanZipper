@@ -1,4 +1,4 @@
-package org.example.ui;
+package org.example.view;
 
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
