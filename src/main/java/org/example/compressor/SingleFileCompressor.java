@@ -4,15 +4,21 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import lombok.extern.slf4j.Slf4j;
+import org.example.entity.file.SingleFileZipInfo;
 import org.example.entity.huffman.HuffmanNode;
 import org.example.entity.huffman.HuffmanTree;
 import org.example.entity.io.BitInputStream;
 import org.example.entity.io.BitOutputStream;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
+// TODO 能否使用多线程来优化速度
 @Slf4j
 public class SingleFileCompressor {
     /**
@@ -23,6 +29,9 @@ public class SingleFileCompressor {
      * 频率映射表
      */
     private final Map<Byte, Integer> weightMap;
+    /**
+     * Kryo 序列化工具
+     */
     private final Kryo kryo;
     /**
      * 哈夫曼编码表
@@ -33,30 +42,62 @@ public class SingleFileCompressor {
      */
     private HuffmanTree huffmanTree;
 
+
     public SingleFileCompressor() {
         this.weightMap = new HashMap<>();
         this.huffmanCodes = new HashMap<>();
         this.kryo = new Kryo();
         kryo.register(HuffmanNode.class);
         kryo.register(HuffmanTree.class);
+        kryo.register(SingleFileZipInfo.class);
     }
 
-    /**
-     * 构建频率表
-     *
-     * @param inputFilePath 输入文件路径
-     * @throws IOException 如果发生 I/O 错误
-     */
-    private void buildFrequencyMap(String inputFilePath) throws IOException {
-        try (FileInputStream fis = new FileInputStream(inputFilePath)) {
-            int b;
-            while ((b = fis.read()) != -1) {
-                byte byteValue = (byte) b;
-                weightMap.put(byteValue, weightMap.getOrDefault(byteValue, 0) + 1);
+    private static Callable<Map<Byte, Integer>> getTask(String inputFilePath, int i, int chunkSize) {
+        final int threadIndex = i;
+        return () -> {
+            Map<Byte, Integer> chunkMap = new HashMap<>();
+            try (FileInputStream fisChunk = new FileInputStream(inputFilePath)) {
+                fisChunk.skip((long) threadIndex * chunkSize);
+                int b;
+                int bytesRead = 0;
+                while ((b = fisChunk.read()) != -1 && bytesRead < chunkSize) {
+                    byte byteValue = (byte) b;
+                    chunkMap.put(byteValue, chunkMap.getOrDefault(byteValue, 0) + 1);
+                    bytesRead++;
+                }
             }
+            return chunkMap;
+        };
+    }
+
+
+    private void buildFrequencyMapParallel(String inputFilePath) throws IOException {
+        int processors = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        AtomicInteger byteCount = new AtomicInteger(0);
+
+        try (FileInputStream fis = new FileInputStream(inputFilePath)) {
+            int fileSize = fis.available();
+            int chunkSize = fileSize / processors;
+
+            List<Callable<Map<Byte, Integer>>> tasks = new ArrayList<>();
+            for (int i = 0; i < processors; i++) {
+                Callable<Map<Byte, Integer>> task = getTask(inputFilePath, i, chunkSize);
+                tasks.add(task);
+            }
+
+            List<Future<Map<Byte, Integer>>> futures = executor.invokeAll(tasks);
+            for (Future<Map<Byte, Integer>> future : futures) {
+                Map<Byte, Integer> chunkMap = future.get();
+                chunkMap.forEach((byteValue, count) -> weightMap.merge(byteValue, count, Integer::sum));
+                byteCount.addAndGet(chunkMap.size());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Error during parallel frequency map building: {}", e.getMessage());
+        } finally {
+            executor.shutdown();
         }
     }
-
 
     /**
      * 压缩文件
@@ -66,20 +107,32 @@ public class SingleFileCompressor {
      * @throws IOException 如果发生 I/O 错误
      */
     public void compressFile(String inputFilePath, String targetDirectory) throws IOException {
-        buildFrequencyMap(inputFilePath);
+//        buildFrequencyMap(inputFilePath);
+        buildFrequencyMapParallel(inputFilePath);
         this.huffmanTree = new HuffmanTree(weightMap);
         this.huffmanCodes = huffmanTree.getHuffmanCodes();
         // 压缩文件
         // todo 压缩时去掉原文件的后缀
-        String compressedFilePath = targetDirectory + File.separator + new File(inputFilePath).getName() + ".hzip";
+        // 获取原文件完整名
+        String fileName = new File(inputFilePath).getName();
+        //获取文件后缀名
+        String fileSuffix = fileName.substring(fileName.lastIndexOf("."));
+        //去掉后缀
+        fileName = fileName.substring(0, fileName.lastIndexOf("."));
+        String compressedFilePath = targetDirectory + File.separator + fileName + ".hzip";
         try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
              BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
              Output output = new Output(bos);
              FileInputStream fis = new FileInputStream(inputFilePath);
              BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
 
-            // 哈夫曼树序列化并写入
-            kryo.writeClassAndObject(output, huffmanTree.getRoot());
+            // 存储文件信息
+            SingleFileZipInfo singleFileZipInfo = new SingleFileZipInfo();
+            singleFileZipInfo.setFileSuffix(fileSuffix);
+            singleFileZipInfo.setRoot(huffmanTree.getRoot());
+
+            // 文件信心序列化并写入
+            kryo.writeClassAndObject(output, singleFileZipInfo);
             output.flush();
 
             // 写入编码后的文件内容
@@ -111,15 +164,18 @@ public class SingleFileCompressor {
         }
         outputFilePath = targetDirectory + File.separator + new File(outputFilePath).getName();
 
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE);
-             Input input = new Input(bis);
-             FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE); Input input = new Input(bis);) {
 
-
-            // 反序列化并重建哈夫曼树
-            HuffmanNode root = (HuffmanNode) kryo.readClassAndObject(input);
+            // 反序列化读取信息
+            SingleFileZipInfo singleFileZipInfo = (SingleFileZipInfo) kryo.readClassAndObject(input);
+            HuffmanNode root = singleFileZipInfo.getRoot();
             this.huffmanTree = new HuffmanTree(root);
 
+            // 重新拼接文件名
+            String fileSuffix = singleFileZipInfo.getFileSuffix();
+            outputFilePath = outputFilePath + fileSuffix;
+
+            FileOutputStream fos = new FileOutputStream(outputFilePath);
             BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
             HuffmanNode current = root;
             while (true) {

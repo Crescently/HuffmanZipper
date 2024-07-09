@@ -8,7 +8,7 @@ import java.io.OutputStream;
 /**
  * 自定义文件输出流
  */
-public class BitOutputStream implements Closeable {
+public class BitOutputStream extends OutputStream implements Closeable {
     private static final int BYTE_SIZE = 8;
     private BufferedOutputStream out;
     /**
@@ -40,6 +40,11 @@ public class BitOutputStream implements Closeable {
             numBitsFilled = 0;
             currentByte = 0;
         }
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+
     }
 
     /**

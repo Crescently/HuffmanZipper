@@ -13,6 +13,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.jlink.image>javafx-runtime</maven.jlink.image>
+            <slf4j.version>1.7.30</slf4j.version>
     </properties>
 
     <dependencies>
@@ -30,6 +31,11 @@
             <version>1.4.12</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
 
 
         <!-- JUnit 4 -->

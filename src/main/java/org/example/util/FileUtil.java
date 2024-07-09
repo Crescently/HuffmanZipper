@@ -71,7 +71,7 @@ public class FileUtil {
     /**
      * 处理单个文件的压缩或解压
      *
-     * @param singleFileCompressor HuffmanCompressor 实例
+     * @param singleFileCompressor SingleFileCompressor 实例
      * @param inputPath            输入文件路径
      * @param outputPath           输出文件路径
      * @param chosenType           操作类型（压缩或解压）
@@ -88,7 +88,7 @@ public class FileUtil {
     /**
      * 处理文件夹的压缩或解压
      *
-     * @param directoryCompressor HuffmanCompressorAboutDir 实例
+     * @param directoryCompressor DirectoryCompressor 实例
      * @param inputPath           输入文件夹路径
      * @param outputPath          输出文件夹路径
      * @param chosenType          操作类型（压缩或解压）

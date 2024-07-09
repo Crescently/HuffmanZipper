@@ -1,13 +1,17 @@
 package org.example.compressor;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import lombok.extern.slf4j.Slf4j;
 import org.example.entity.file.DirectoryStructure;
-import org.example.entity.file.FileNode;
 import org.example.entity.file.DirectoryZipInfo;
+import org.example.entity.file.FileNode;
 import org.example.entity.huffman.HuffmanNode;
 import org.example.entity.huffman.HuffmanTree;
 import org.example.entity.io.BitInputStream;
 import org.example.entity.io.BitOutputStream;
+import org.example.entity.file.FileNodeSerializer;
 
 import java.io.*;
 import java.util.HashMap;
@@ -17,14 +21,20 @@ import java.util.Map;
 public class DirectoryCompressor {
     public static final int BUFFER_SIZE = 8192 * 5;
     private final Map<Byte, Integer> weightMap;
-    private DirectoryZipInfo directoryZipInfo;
+    private final DirectoryZipInfo directoryZipInfo;
     private Map<Byte, String> huffmanCodes;
     private HuffmanTree huffmanTree;
+    private final Kryo kryo;
 
     public DirectoryCompressor() {
         this.directoryZipInfo = new DirectoryZipInfo();
         this.weightMap = new HashMap<>();
         this.huffmanCodes = new HashMap<>();
+        this.kryo = new Kryo();
+        kryo.setReferences(true);
+        kryo.register(HuffmanNode.class);
+        kryo.register(FileNode.class, new FileNodeSerializer());
+        kryo.register(DirectoryZipInfo.class);
     }
 
     private void buildFrequencyMapFromDirectory(FileNode node, String basePath) throws IOException {
@@ -47,8 +57,9 @@ public class DirectoryCompressor {
     }
 
     /**
-     *记录每个文件的大小
-     * @param node 文件节点
+     * 记录每个文件的大小
+     *
+     * @param node     文件节点
      * @param basePath 当前路径
      */
     private void recordFileSizes(FileNode node, String basePath) {
@@ -67,9 +78,10 @@ public class DirectoryCompressor {
     }
 
     /**
-     *  压缩文件夹
+     * 压缩文件夹
+     *
      * @param inputDirectoryPath 输入文件夹路径
-     * @param outputFilePath 输出文件路径
+     * @param outputFilePath     输出文件路径
      * @throws IOException IOException
      */
     public void compressDirectory(String inputDirectoryPath, String outputFilePath) throws IOException {
@@ -101,29 +113,32 @@ public class DirectoryCompressor {
 
         String compressedFilePath = outputFilePath + File.separator + new File(inputDirectoryPath).getName() + ".hzip";
 
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
-             BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
-             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
+//             ObjectOutputStream oos = new ObjectOutputStream(bos)
+             Output output = new Output(bos)) {
 
             // 序列化并写入哈夫曼树和目录结构
             directoryZipInfo.setRoot(huffmanTree.getRoot());
             directoryZipInfo.setRootNode(rootNode);
-            oos.writeObject(directoryZipInfo);
+            kryo.writeClassAndObject(output, directoryZipInfo);
 
-            oos.flush();
+            output.flush();
 
             // 写入文件内容
             try (BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
                 compressDirectoryContent(rootNode, new File(parentPath).getAbsolutePath(), bitOut);
+                bitOut.flush();
+                log.info("Compressed directory completed");
             }
         }
     }
 
     /**
      * 递归压缩目录内容
-     * @param node 文件节点
+     *
+     * @param node     文件节点
      * @param basePath 当前路径
-     * @param bitOut BitOutputStream
+     * @param bitOut   BitOutputStream
      * @throws IOException IOException
      */
     private void compressDirectoryContent(FileNode node, String basePath, BitOutputStream bitOut) throws IOException {
@@ -147,9 +162,10 @@ public class DirectoryCompressor {
     }
 
     /**
-     *  解压目录
+     * 解压目录
+     *
      * @param compressedFilePath 压缩文件路径
-     * @param targetDirectory 目标目录
+     * @param targetDirectory    目标目录
      * @throws IOException IOException
      */
     public void decompressDirectory(String compressedFilePath, String targetDirectory) throws IOException {
@@ -159,16 +175,18 @@ public class DirectoryCompressor {
         }
 
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE);
-             ObjectInputStream ois = new ObjectInputStream(bis)) {
+//             ObjectInputStream ois = new ObjectInputStream(bis)
+             Input input = new Input(bis)) {
 
             // 读取并反序列化Huffman树和目录结构
-            DirectoryZipInfo directoryZipInfo = (DirectoryZipInfo) ois.readObject();
+            DirectoryZipInfo directoryZipInfo = (DirectoryZipInfo) kryo.readClassAndObject(input);
             HuffmanNode root = directoryZipInfo.getRoot();
             FileNode rootNode = directoryZipInfo.getRootNode();
             this.huffmanTree = new HuffmanTree(root);
 
+
             // 解压文件内容
-            BitInputStream bitIn = new BitInputStream(bis, BUFFER_SIZE);
+            BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
             Map<String, FileOutputStream> outputStreams = new HashMap<>();
             decompressDirectoryContent(rootNode, targetDirectory, bitIn, outputStreams);
 
@@ -176,17 +194,17 @@ public class DirectoryCompressor {
                 fos.close();
             }
 
+            log.info("deCompressed directory completed");
             bitIn.close();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 
     /**
      * 递归解压目录内容
-     * @param node 文件节点
-     * @param outputPath 目标路径
-     * @param bitIn BitInputStream
+     *
+     * @param node          文件节点
+     * @param outputPath    目标路径
+     * @param bitIn         BitInputStream
      * @param outputStreams 输出流
      * @throws IOException IOException
      */
