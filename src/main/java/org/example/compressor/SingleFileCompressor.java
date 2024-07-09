@@ -78,7 +78,7 @@ public class SingleFileCompressor {
 
         try (FileInputStream fis = new FileInputStream(inputFilePath)) {
             int fileSize = fis.available();
-            int chunkSize = fileSize / processors;
+            int chunkSize = (fileSize + processors - 1) / processors;
 
             List<Callable<Map<Byte, Integer>>> tasks = new ArrayList<>();
             for (int i = 0; i < processors; i++) {
@@ -107,12 +107,10 @@ public class SingleFileCompressor {
      * @throws IOException 如果发生 I/O 错误
      */
     public void compressFile(String inputFilePath, String targetDirectory) throws IOException {
-//        buildFrequencyMap(inputFilePath);
         buildFrequencyMapParallel(inputFilePath);
         this.huffmanTree = new HuffmanTree(weightMap);
         this.huffmanCodes = huffmanTree.getHuffmanCodes();
         // 压缩文件
-        // todo 压缩时去掉原文件的后缀
         // 获取原文件完整名
         String fileName = new File(inputFilePath).getName();
         //获取文件后缀名
@@ -120,18 +118,18 @@ public class SingleFileCompressor {
         //去掉后缀
         fileName = fileName.substring(0, fileName.lastIndexOf("."));
         String compressedFilePath = targetDirectory + File.separator + fileName + ".hzip";
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
-             BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
-             Output output = new Output(bos);
-             FileInputStream fis = new FileInputStream(inputFilePath);
-             BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE); Output output = new Output(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
 
             // 存储文件信息
             SingleFileZipInfo singleFileZipInfo = new SingleFileZipInfo();
             singleFileZipInfo.setFileSuffix(fileSuffix);
             singleFileZipInfo.setRoot(huffmanTree.getRoot());
 
-            // 文件信心序列化并写入
+            // 写入文件长度
+            long originalFileSize = new File(inputFilePath).length();
+            output.writeLong(originalFileSize);
+
+            // 文件信息序列化并写入
             kryo.writeClassAndObject(output, singleFileZipInfo);
             output.flush();
 
@@ -166,6 +164,9 @@ public class SingleFileCompressor {
 
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE); Input input = new Input(bis);) {
 
+            // 获取文件长度
+            long originalFileSize = input.readLong();
+
             // 反序列化读取信息
             SingleFileZipInfo singleFileZipInfo = (SingleFileZipInfo) kryo.readClassAndObject(input);
             HuffmanNode root = singleFileZipInfo.getRoot();
@@ -178,18 +179,15 @@ public class SingleFileCompressor {
             FileOutputStream fos = new FileOutputStream(outputFilePath);
             BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
             HuffmanNode current = root;
-            while (true) {
-                int bit = bitIn.readBit();
-                if (bit == -1) {
-                    break;
-                }
-                if (bit == 0) {
-                    current = current.getLeft();
-                } else {
-                    current = current.getRight();
-                }
+
+            // 解压文件
+            int bit;
+            long bytesRead = 0;
+            while (bytesRead < originalFileSize && (bit = bitIn.readBit()) != -1) {
+                current = (bit == 0) ? current.getLeft() : current.getRight();
                 if (current.getLeft() == null && current.getRight() == null) {
                     fos.write(current.getData());
+                    bytesRead++;
                     current = root;
                 }
             }

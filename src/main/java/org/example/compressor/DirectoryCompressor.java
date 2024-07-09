@@ -7,11 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.entity.file.DirectoryStructure;
 import org.example.entity.file.DirectoryZipInfo;
 import org.example.entity.file.FileNode;
+import org.example.entity.file.FileNodeSerializer;
 import org.example.entity.huffman.HuffmanNode;
 import org.example.entity.huffman.HuffmanTree;
 import org.example.entity.io.BitInputStream;
 import org.example.entity.io.BitOutputStream;
-import org.example.entity.file.FileNodeSerializer;
 
 import java.io.*;
 import java.util.HashMap;
@@ -22,9 +22,9 @@ public class DirectoryCompressor {
     public static final int BUFFER_SIZE = 8192 * 5;
     private final Map<Byte, Integer> weightMap;
     private final DirectoryZipInfo directoryZipInfo;
+    private final Kryo kryo;
     private Map<Byte, String> huffmanCodes;
     private HuffmanTree huffmanTree;
-    private final Kryo kryo;
 
     public DirectoryCompressor() {
         this.directoryZipInfo = new DirectoryZipInfo();
@@ -94,7 +94,7 @@ public class DirectoryCompressor {
         }
 
         // 构建目录树
-        DirectoryStructure ds = DirectoryStructure.getInstance();
+        DirectoryStructure ds = new DirectoryStructure();
         FileNode rootNode = ds.buildTree(new File(inputDirectoryPath));
 
         File file = new File(inputDirectoryPath);

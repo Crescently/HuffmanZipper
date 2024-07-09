@@ -52,7 +52,7 @@ public class FileUtil {
                 } else if (file.isDirectory()) {
                     handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
                 } else {
-                    log.error("FileUtil-70: The path is neither a file nor a directory.");
+                    log.error("FileUtil-55: The path is neither a file nor a directory.");
                 }
             } else if (chosenType.equals(OperateType.DECOMPRESS)) {
                 if (fileType.equals(FileType.SINGLE_FILE)) {
@@ -64,7 +64,7 @@ public class FileUtil {
                 }
             }
         } catch (Exception e) {
-            log.error("FileUtil-54: Error processing file or directory: {}", e.getMessage());
+            log.error("FileUtil-67: Error processing file or directory: {}", e.getMessage());
         }
     }
 

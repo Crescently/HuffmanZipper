@@ -20,13 +20,6 @@ public class DirectoryStructure implements Serializable {
      */
     private FileNode root;
 
-    private DirectoryStructure() {
-        // 私有构造方法防止实例化
-    }
-
-    public static DirectoryStructure getInstance() {
-        return InstanceHolder.instance;
-    }
 
     public FileNode buildTree(File file) {
         FileNode node = new FileNode(file.getName(), file.isFile());
@@ -38,9 +31,5 @@ public class DirectoryStructure implements Serializable {
         return node;
     }
 
-
-    private static final class InstanceHolder {
-        private static final DirectoryStructure instance = new DirectoryStructure();
-    }
 
 }
