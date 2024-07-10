@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import lombok.extern.slf4j.Slf4j;
+import org.example.constant.Constants;
 import org.example.entity.file.SingleFileZipInfo;
 import org.example.entity.huffman.HuffmanNode;
 import org.example.entity.huffman.HuffmanTree;
@@ -18,13 +19,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-// TODO 能否使用多线程来优化速度
 @Slf4j
 public class SingleFileCompressor {
-    /**
-     * 缓冲区大小
-     */
-    public static final int BUFFER_SIZE = 8192;
     /**
      * 频率映射表
      */
@@ -118,12 +114,19 @@ public class SingleFileCompressor {
         //去掉后缀
         fileName = fileName.substring(0, fileName.lastIndexOf("."));
         String compressedFilePath = targetDirectory + File.separator + fileName + ".hzip";
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE); Output output = new Output(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
+             BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE);
+             Output output = new Output(bos);
+             FileInputStream fis = new FileInputStream(inputFilePath);
+             BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
 
             // 存储文件信息
             SingleFileZipInfo singleFileZipInfo = new SingleFileZipInfo();
             singleFileZipInfo.setFileSuffix(fileSuffix);
             singleFileZipInfo.setRoot(huffmanTree.getRoot());
+
+
+            output.writeString(Constants.SINGLE_FILE);
 
             // 写入文件长度
             long originalFileSize = new File(inputFilePath).length();
@@ -162,10 +165,18 @@ public class SingleFileCompressor {
         }
         outputFilePath = targetDirectory + File.separator + new File(outputFilePath).getName();
 
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE); Input input = new Input(bis);) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE);
+             Input input = new Input(bis)) {
 
+
+            // 获取文件类型
+            String fileType = input.readString();
+            if (!Constants.SINGLE_FILE.equals(fileType)) {
+                throw new IllegalArgumentException("The file is not a single file.");
+            }
             // 获取文件长度
             long originalFileSize = input.readLong();
+            System.out.println(originalFileSize);
 
             // 反序列化读取信息
             SingleFileZipInfo singleFileZipInfo = (SingleFileZipInfo) kryo.readClassAndObject(input);
@@ -177,7 +188,7 @@ public class SingleFileCompressor {
             outputFilePath = outputFilePath + fileSuffix;
 
             FileOutputStream fos = new FileOutputStream(outputFilePath);
-            BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
+            BitInputStream bitIn = new BitInputStream(input, Constants.BUFFER_SIZE);
             HuffmanNode current = root;
 
             // 解压文件

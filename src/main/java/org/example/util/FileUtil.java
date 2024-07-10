@@ -1,13 +1,18 @@
 package org.example.util;
 
+import com.esotericsoftware.kryo.io.Input;
 import lombok.extern.slf4j.Slf4j;
 import org.example.compressor.DirectoryCompressor;
 import org.example.compressor.SingleFileCompressor;
-import org.example.constant.FileType;
+import org.example.constant.Constants;
 import org.example.constant.OperateType;
 import org.example.entity.file.FileBasicInfo;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
 
 /**
  * 文件操作工具类
@@ -30,14 +35,14 @@ public class FileUtil {
 
     /**
      * 文件类型识别
-     * @param filePath 文件路径
+     *
+     * @param filePath   文件路径
      * @param chosenType 操作类型
-     * @param fileType 解压后文件类型
      */
-    public static void FileTypeReader(String filePath, OperateType chosenType, FileType fileType) {
+    public static void FileTypeReader(String filePath, OperateType chosenType) {
         File file = new File(filePath);
         if (!file.exists()) {
-            log.error("FileUtil-73: The path does not exist.");
+            log.error("The path does not exist.");
             return;
         }
         FileBasicInfo fileBasicInfo = FileBasicInfo.getInstance();
@@ -52,21 +57,38 @@ public class FileUtil {
                 } else if (file.isDirectory()) {
                     handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
                 } else {
-                    log.error("FileUtil-55: The path is neither a file nor a directory.");
+                    log.error("The path is neither a file nor a directory.");
                 }
             } else if (chosenType.equals(OperateType.DECOMPRESS)) {
-                if (fileType.equals(FileType.SINGLE_FILE)) {
+                String fileTypeInZip = getFileTypeFromZip(inputPath);
+                if (Constants.SINGLE_FILE.equals(fileTypeInZip)) {
                     handleFile(singleFileCompressor, inputPath, outputPath, chosenType);
-                } else if (fileType.equals(FileType.DIRECTORY)) {
+                } else if (Constants.DIRECTORY.equals(fileTypeInZip)) {
                     handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
                 } else {
-                    log.error("file decompress type error");
+                    log.error("Unknown file type in compressed file.");
                 }
+
             }
         } catch (Exception e) {
-            log.error("FileUtil-67: Error processing file or directory: {}", e.getMessage());
+            log.error("Error processing file or directory: {}", e.getMessage());
         }
     }
+
+    /**
+     * 从压缩文件中获取文件类型
+     *
+     * @param compressedFilePath 压缩文件路径
+     * @return 文件类型
+     * @throws IOException 读取文件时可能抛出的异常
+     */
+    private static String getFileTypeFromZip(String compressedFilePath) throws IOException {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE);
+             Input input = new Input(bis)) {
+            return input.readString();
+        }
+    }
+
 
     /**
      * 处理单个文件的压缩或解压

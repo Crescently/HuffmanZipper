@@ -1,5 +1,7 @@
 package org.example.entity.io;
 
+import org.example.constant.Constants;
+
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -9,8 +11,8 @@ import java.io.OutputStream;
  * 自定义文件输出流
  */
 public class BitOutputStream extends OutputStream implements Closeable {
-    private static final int BYTE_SIZE = 8;
-    private BufferedOutputStream out;
+
+    private final BufferedOutputStream out;
     /**
      * 当前字节
      */
@@ -35,7 +37,7 @@ public class BitOutputStream extends OutputStream implements Closeable {
     public void writeBit(boolean bit) throws IOException {
         currentByte = (currentByte << 1) | (bit ? 1 : 0);
         numBitsFilled++;
-        if (numBitsFilled == BYTE_SIZE) {
+        if (numBitsFilled == Constants.BYTE_SIZE) {
             out.write(currentByte);
             numBitsFilled = 0;
             currentByte = 0;
@@ -43,7 +45,7 @@ public class BitOutputStream extends OutputStream implements Closeable {
     }
 
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b){
 
     }
 
@@ -54,7 +56,7 @@ public class BitOutputStream extends OutputStream implements Closeable {
      */
     public void close() throws IOException {
         if (numBitsFilled > 0) {
-            currentByte <<= (BYTE_SIZE - numBitsFilled);
+            currentByte <<= (Constants.BYTE_SIZE - numBitsFilled);
             out.write(currentByte);
         }
         out.close();

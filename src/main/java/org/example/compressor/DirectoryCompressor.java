@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import lombok.extern.slf4j.Slf4j;
+import org.example.constant.Constants;
 import org.example.entity.file.DirectoryStructure;
 import org.example.entity.file.DirectoryZipInfo;
 import org.example.entity.file.FileNode;
@@ -19,7 +20,6 @@ import java.util.Map;
 
 @Slf4j
 public class DirectoryCompressor {
-    public static final int BUFFER_SIZE = 8192 * 5;
     private final Map<Byte, Integer> weightMap;
     private final DirectoryZipInfo directoryZipInfo;
     private final Kryo kryo;
@@ -113,9 +113,9 @@ public class DirectoryCompressor {
 
         String compressedFilePath = outputFilePath + File.separator + new File(inputDirectoryPath).getName() + ".hzip";
 
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, BUFFER_SIZE);
-//             ObjectOutputStream oos = new ObjectOutputStream(bos)
-             Output output = new Output(bos)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE); Output output = new Output(bos)) {
+
+            output.writeString(Constants.DIRECTORY);
 
             // 序列化并写入哈夫曼树和目录结构
             directoryZipInfo.setRoot(huffmanTree.getRoot());
@@ -125,7 +125,7 @@ public class DirectoryCompressor {
             output.flush();
 
             // 写入文件内容
-            try (BitOutputStream bitOut = new BitOutputStream(bos, BUFFER_SIZE)) {
+            try (BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
                 compressDirectoryContent(rootNode, new File(parentPath).getAbsolutePath(), bitOut);
                 bitOut.flush();
                 log.info("Compressed directory completed");
@@ -171,12 +171,17 @@ public class DirectoryCompressor {
     public void decompressDirectory(String compressedFilePath, String targetDirectory) throws IOException {
         // 判断文件后缀是否合法
         if (!compressedFilePath.endsWith(".hzip")) {
-            throw new IllegalArgumentException("The file is not a compressed file.");
+            log.error("The file is not a compressed file.");
         }
 
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), BUFFER_SIZE);
-//             ObjectInputStream ois = new ObjectInputStream(bis)
-             Input input = new Input(bis)) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE); Input input = new Input(bis)) {
+
+            // 获取文件类型
+            String fileType = input.readString();
+            if (!Constants.DIRECTORY.equals(fileType)) {
+                log.error("The file is not a single file.");
+            }
+
 
             // 读取并反序列化Huffman树和目录结构
             DirectoryZipInfo directoryZipInfo = (DirectoryZipInfo) kryo.readClassAndObject(input);
@@ -186,7 +191,7 @@ public class DirectoryCompressor {
 
 
             // 解压文件内容
-            BitInputStream bitIn = new BitInputStream(input, BUFFER_SIZE);
+            BitInputStream bitIn = new BitInputStream(input, Constants.BUFFER_SIZE);
             Map<String, FileOutputStream> outputStreams = new HashMap<>();
             decompressDirectoryContent(rootNode, targetDirectory, bitIn, outputStreams);
 

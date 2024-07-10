@@ -3,12 +3,12 @@ package org.example.view;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import org.example.constant.FileType;
 import org.example.constant.OperateType;
 import org.example.util.FileUtil;
 
@@ -28,24 +28,22 @@ public class ZipperController {
     @FXML
     private TextField targetPathField;
 
-    @FXML
-    private ComboBox<String> selectFileType;
 
     @FXML
     private void handleBrowse() {
         String type = selectionType.getValue();
-        if (type.equals("文件")) {
+        File selected = null;
+        if ("文件".equals(type)) {
             FileChooser fileChooser = new FileChooser();
-            File selectedFile = fileChooser.showOpenDialog(null);
-            if (selectedFile != null) {
-                filePathField.setText(selectedFile.getAbsolutePath());
-            }
-        } else if (type.equals("文件夹")) {
+            selected = fileChooser.showOpenDialog(null);
+        } else if ("文件夹".equals(type)) {
             DirectoryChooser directoryChooser = new DirectoryChooser();
-            File selectedDirectory = directoryChooser.showDialog(null);
-            if (selectedDirectory != null) {
-                filePathField.setText(selectedDirectory.getAbsolutePath());
-            }
+            selected = directoryChooser.showDialog(null);
+        }
+        if (selected != null) {
+            filePathField.setText(selected.getAbsolutePath());
+        } else {
+            showAlert("选择错误", "未选择任何文件或文件夹。");
         }
     }
 
@@ -55,6 +53,8 @@ public class ZipperController {
         File selectedDirectory = directoryChooser.showDialog(null);
         if (selectedDirectory != null) {
             targetPathField.setText(selectedDirectory.getAbsolutePath());
+        } else {
+            showAlert("选择错误", "未选择目标目录。");
         }
     }
 
@@ -62,32 +62,38 @@ public class ZipperController {
     private void handleZip(ActionEvent event) {
         String filePath = filePathField.getText();
         String targetPath = targetPathField.getText();
-        String type = selectFileType.getValue();
-        FileType chosen = null;
-        if ("文件".equals(type)) {
-            chosen = FileType.SINGLE_FILE;
-        } else if ("文件夹".equals(type)) {
-            chosen = FileType.DIRECTORY;
+
+        if (filePath == null || filePath.isEmpty() || targetPath == null || targetPath.isEmpty()) {
+            showAlert("错误", "请确保所有字段均已填写。");
+            return;
         }
-        // 创建解压任务并在新线程中运行 防止界面卡死
-        FileType finalChosen = chosen;
+
+        // 创建任务并在新线程中运行 防止界面卡死
         Task<Void> unzipTask = new Task<>() {
             @Override
             protected Void call() {
-                if (filePath != null && targetPath != null) {
-                    FileUtil.getFileInfo(filePath, targetPath);
-                    if (event.getSource() == compress) {
-                        FileTypeReader(filePath, OperateType.COMPRESS, finalChosen);
-                    } else if (event.getSource() == decompress) {
-                        FileTypeReader(filePath, OperateType.DECOMPRESS, finalChosen);
-                    }
-
+                FileUtil.getFileInfo(filePath, targetPath);
+                if (event.getSource() == compress) {
+                    FileTypeReader(filePath, OperateType.COMPRESS);
+                } else if (event.getSource() == decompress) {
+                    FileTypeReader(filePath, OperateType.DECOMPRESS);
                 }
                 return null;
             }
         };
         new Thread(unzipTask).start();
+    }
 
-
+    /**
+     * 显示错误提示框
+     *
+     * @param title   标题
+     * @param content 内容
+     */
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }

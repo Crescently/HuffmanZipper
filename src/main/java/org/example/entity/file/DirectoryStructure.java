@@ -20,7 +20,11 @@ public class DirectoryStructure implements Serializable {
      */
     private FileNode root;
 
-
+    /**
+     * 构建文件目录结构
+     * @param file 文件根节点
+     * @return 文件目录结构
+     */
     public FileNode buildTree(File file) {
         FileNode node = new FileNode(file.getName(), file.isFile());
         if (file.isDirectory()) {

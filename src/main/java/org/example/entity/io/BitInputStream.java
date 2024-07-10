@@ -1,13 +1,14 @@
 package org.example.entity.io;
 
+import org.example.constant.Constants;
+
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 
 public class BitInputStream implements Closeable {
-    private static final int BYTE_SIZE = 8;
-    private BufferedInputStream in;
+    private final BufferedInputStream in;
     /**
      * 当前字节
      */
@@ -38,7 +39,7 @@ public class BitInputStream implements Closeable {
             if (currentByte == -1) {
                 return -1;
             }
-            numBitsRemaining = BYTE_SIZE;
+            numBitsRemaining = Constants.BYTE_SIZE;
         }
         numBitsRemaining--;
         return (currentByte >> numBitsRemaining) & 1;

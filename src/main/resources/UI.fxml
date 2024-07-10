@@ -7,9 +7,10 @@
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.example.view.ZipperController"
-            prefHeight="400.0" prefWidth="600.0">
-    <Label text="选择类型：" layoutX="10" layoutY="14"/>
-    <ComboBox fx:id="selectionType" layoutX="80" layoutY="10" prefWidth="120">
+            prefHeight="400.0" prefWidth="600.0"
+            stylesheets="style.css">
+    <Label text="选择类型：" layoutX="10" layoutY="14" styleClass="label"/>
+    <ComboBox fx:id="selectionType" layoutX="130" layoutY="10" prefWidth="120" styleClass="combo-box"    >
         <items>
             <FXCollections fx:factory="observableArrayList">
                 <String fx:value="文件"/>
@@ -17,26 +18,15 @@
             </FXCollections>
         </items>
     </ComboBox>
-<!--  todo 美化页面样式  -->
-    <Label text="选择文件/文件夹：" layoutX="10" layoutY="54"/>
-    <TextField fx:id="filePathField" layoutX="130" layoutY="50" prefWidth="250"/>
-    <Button text="浏览" layoutX="390" layoutY="50" onAction="#handleBrowse"/>
+    <Label text="选择文件/文件夹：" layoutX="10" layoutY="74" styleClass="label"/>
+    <TextField fx:id="filePathField" layoutX="130" layoutY="70" prefWidth="250" styleClass="text-field"/>
+    <Button text="浏览" layoutX="390" layoutY="70" onAction="#handleBrowse"/>
 
-    <Label text="目标目录：" layoutX="10" layoutY="94"/>
-    <TextField fx:id="targetPathField" layoutX="80" layoutY="90" prefWidth="300"/>
-    <Button text="浏览" layoutX="390" layoutY="90" onAction="#handleBrowseTarget"/>
+    <Label text="目标目录：" layoutX="10" layoutY="134"/>
+    <TextField fx:id="targetPathField" layoutX="130" layoutY="130" prefWidth="300"/>
+    <Button text="浏览" layoutX="390" layoutY="130" onAction="#handleBrowseTarget"/>
 
-    <Label text="选择解压类型：" layoutX="10" layoutY="154"/>
-    <ComboBox fx:id="selectFileType" layoutX="110" layoutY="150" prefWidth="120">
-        <items>
-            <FXCollections fx:factory="observableArrayList">
-                <String fx:value="文件"/>
-                <String fx:value="文件夹"/>
-            </FXCollections>
-        </items>
-    </ComboBox>
-
-    <Button fx:id="compress" text="压缩" layoutX="400" layoutY="200" onAction="#handleZip"/>
-    <Button fx:id="decompress" text="解压" layoutX="200" layoutY="200" onAction="#handleZip"/>
+    <Button fx:id="compress" text="压缩" layoutX="200" layoutY="200" onAction="#handleZip" styleClass="action-button"/>
+    <Button fx:id="decompress" text="解压" layoutX="340" layoutY="200" onAction="#handleZip" styleClass="action-button"/>
 
 </AnchorPane>

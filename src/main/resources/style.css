@@ -1,0 +1,19 @@
+.label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #333333;
+}
+
+.combo-box, .text-field {
+    -fx-font-size: 14px;
+    -fx-pref-width: 200px;
+
+}
+
+.action-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 8px 16px;
+    -fx-border-radius: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
+}
