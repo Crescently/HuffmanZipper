@@ -114,11 +114,8 @@ public class SingleFileCompressor {
         //去掉后缀
         fileName = fileName.substring(0, fileName.lastIndexOf("."));
         String compressedFilePath = targetDirectory + File.separator + fileName + ".hzip";
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
-             BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE);
-             Output output = new Output(bos);
-             FileInputStream fis = new FileInputStream(inputFilePath);
-             BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
+        log.info("Start compressing file: {}", inputFilePath);
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE); Output output = new Output(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
 
             // 存储文件信息
             SingleFileZipInfo singleFileZipInfo = new SingleFileZipInfo();
@@ -144,7 +141,8 @@ public class SingleFileCompressor {
                     bitOut.writeBit(bit == '1');
                 }
             }
-            log.info("Compressed file finish");
+            log.info("Compressed file completed");
+
         }
     }
 
@@ -165,10 +163,8 @@ public class SingleFileCompressor {
         }
         outputFilePath = targetDirectory + File.separator + new File(outputFilePath).getName();
 
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE);
-             Input input = new Input(bis)) {
-
-
+        log.info("Start decompressing file: {}", compressedFilePath);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE); Input input = new Input(bis)) {
             // 获取文件类型
             String fileType = input.readString();
             if (!Constants.SINGLE_FILE.equals(fileType)) {
@@ -176,7 +172,6 @@ public class SingleFileCompressor {
             }
             // 获取文件长度
             long originalFileSize = input.readLong();
-            System.out.println(originalFileSize);
 
             // 反序列化读取信息
             SingleFileZipInfo singleFileZipInfo = (SingleFileZipInfo) kryo.readClassAndObject(input);
@@ -202,8 +197,9 @@ public class SingleFileCompressor {
                     current = root;
                 }
             }
-            log.info("Decompressed file finish");
+            log.info("Decompressed file completed");
             bitIn.close();
+            fos.close();
         }
     }
 }

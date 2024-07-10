@@ -119,6 +119,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <finalName>HuffmanZip</finalName>
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">

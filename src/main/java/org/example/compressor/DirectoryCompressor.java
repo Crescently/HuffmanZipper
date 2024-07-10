@@ -112,7 +112,7 @@ public class DirectoryCompressor {
         this.huffmanCodes = huffmanTree.getHuffmanCodes();
 
         String compressedFilePath = outputFilePath + File.separator + new File(inputDirectoryPath).getName() + ".hzip";
-
+        log.info("Start compressing directory: {}", inputDirectoryPath);
         try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE); Output output = new Output(bos)) {
 
             output.writeString(Constants.DIRECTORY);
@@ -173,7 +173,7 @@ public class DirectoryCompressor {
         if (!compressedFilePath.endsWith(".hzip")) {
             log.error("The file is not a compressed file.");
         }
-
+        log.info("Start decompressing directory: {}", compressedFilePath);
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE); Input input = new Input(bis)) {
 
             // 获取文件类型
