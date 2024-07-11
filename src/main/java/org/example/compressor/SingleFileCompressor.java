@@ -115,7 +115,11 @@ public class SingleFileCompressor {
         fileName = fileName.substring(0, fileName.lastIndexOf("."));
         String compressedFilePath = targetDirectory + File.separator + fileName + ".hzip";
         log.info("Start compressing file: {}", inputFilePath);
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE); Output output = new Output(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
+             BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE);
+             Output output = new Output(bos);
+             FileInputStream fis = new FileInputStream(inputFilePath);
+             BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
 
             // 存储文件信息
             SingleFileZipInfo singleFileZipInfo = new SingleFileZipInfo();

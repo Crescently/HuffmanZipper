@@ -1,5 +1,6 @@
 package org.example.view;
 
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -72,15 +73,20 @@ public class ZipperController {
         Task<Void> unzipTask = new Task<>() {
             @Override
             protected Void call() {
-                FileUtil.getFileInfo(filePath, targetPath);
-                if (event.getSource() == compress) {
-                    FileTypeReader(filePath, OperateType.COMPRESS);
-                } else if (event.getSource() == decompress) {
-                    FileTypeReader(filePath, OperateType.DECOMPRESS);
+                try {
+                    FileUtil.getFileInfo(filePath, targetPath);
+                    if (event.getSource() == compress) {
+                        FileTypeReader(filePath, OperateType.COMPRESS);
+                    } else if (event.getSource() == decompress) {
+                        FileTypeReader(filePath, OperateType.DECOMPRESS);
+                    }
+                } catch (Exception e) {
+                    Platform.runLater(() -> showAlert("操作失败", "文件处理过程中出现错误: " + e.getMessage()));
                 }
                 return null;
             }
         };
+
         new Thread(unzipTask).start();
     }
 

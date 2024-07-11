@@ -51,29 +51,56 @@ public class FileUtil {
         SingleFileCompressor singleFileCompressor = new SingleFileCompressor();
         DirectoryCompressor directoryCompressor = new DirectoryCompressor();
         try {
-            if (chosenType.equals(OperateType.COMPRESS)) {
-                if (file.isFile()) {
-                    handleFile(singleFileCompressor, inputPath, outputPath, chosenType);
-                } else if (file.isDirectory()) {
-                    handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
-                } else {
-                    log.error("The path is neither a file nor a directory.");
-                }
-            } else if (chosenType.equals(OperateType.DECOMPRESS)) {
-                String fileTypeInZip = getFileTypeFromZip(inputPath);
-                if (Constants.SINGLE_FILE.equals(fileTypeInZip)) {
-                    handleFile(singleFileCompressor, inputPath, outputPath, chosenType);
-                } else if (Constants.DIRECTORY.equals(fileTypeInZip)) {
-                    handleDirectory(directoryCompressor, inputPath, outputPath, chosenType);
-                } else {
-                    log.error("Unknown file type in compressed file.");
-                }
-
+            if (chosenType == OperateType.COMPRESS) {
+                processCompression(file, inputPath, outputPath, singleFileCompressor, directoryCompressor);
+            } else if (chosenType == OperateType.DECOMPRESS) {
+                processDecompression(inputPath, outputPath, singleFileCompressor, directoryCompressor);
             }
         } catch (Exception e) {
             log.error("Error processing file or directory: {}", e.getMessage());
         }
     }
+
+    /**
+     * * 处理压缩
+     *
+     * @param file                 文件
+     * @param inputPath            输入路径
+     * @param outputPath           输出路径
+     * @param singleFileCompressor 单文件压缩器
+     * @param directoryCompressor  目录压缩器
+     * @throws Exception 异常
+     */
+    private static void processCompression(File file, String inputPath, String outputPath, SingleFileCompressor singleFileCompressor, DirectoryCompressor directoryCompressor) throws Exception {
+        if (file.isFile()) {
+            handleFile(singleFileCompressor, inputPath, outputPath, OperateType.COMPRESS);
+        } else if (file.isDirectory()) {
+            handleDirectory(directoryCompressor, inputPath, outputPath, OperateType.COMPRESS);
+        } else {
+            log.error("The path is neither a file nor a directory.");
+        }
+    }
+
+    /**
+     * * 处理解压
+     *
+     * @param inputPath            输入路径
+     * @param outputPath           输出路径
+     * @param singleFileCompressor 单文件解压器
+     * @param directoryCompressor  目录解压器
+     * @throws Exception 异常
+     */
+    private static void processDecompression(String inputPath, String outputPath, SingleFileCompressor singleFileCompressor, DirectoryCompressor directoryCompressor) throws Exception {
+        String fileTypeInZip = getFileTypeFromZip(inputPath);
+        if (Constants.SINGLE_FILE.equals(fileTypeInZip)) {
+            handleFile(singleFileCompressor, inputPath, outputPath, OperateType.DECOMPRESS);
+        } else if (Constants.DIRECTORY.equals(fileTypeInZip)) {
+            handleDirectory(directoryCompressor, inputPath, outputPath, OperateType.DECOMPRESS);
+        } else {
+            log.error("Unknown file type in compressed file.");
+        }
+    }
+
 
     /**
      * 从压缩文件中获取文件类型
@@ -83,8 +110,7 @@ public class FileUtil {
      * @throws IOException 读取文件时可能抛出的异常
      */
     private static String getFileTypeFromZip(String compressedFilePath) throws IOException {
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE);
-             Input input = new Input(bis)) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(compressedFilePath), Constants.BUFFER_SIZE); Input input = new Input(bis)) {
             return input.readString();
         }
     }

@@ -45,8 +45,8 @@ public class BitOutputStream extends OutputStream implements Closeable {
     }
 
     @Override
-    public void write(int b){
-
+    public void write(int b) {
+        throw new UnsupportedOperationException("Use writeBit method for bit-level writing.");
     }
 
     /**

@@ -22,10 +22,16 @@ public class DirectoryStructure implements Serializable {
 
     /**
      * 构建文件目录结构
+     *
      * @param file 文件根节点
      * @return 文件目录结构
      */
     public FileNode buildTree(File file) {
+        // 检查文件是否为null
+        if (file == null) {
+            throw new IllegalArgumentException("The file cannot be null.");
+        }
+
         FileNode node = new FileNode(file.getName(), file.isFile());
         if (file.isDirectory()) {
             for (File child : Objects.requireNonNull(file.listFiles())) {
