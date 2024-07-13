@@ -67,7 +67,7 @@ public class SingleFileCompressor {
     }
 
 
-    private void buildFrequencyMapParallel(String inputFilePath) throws IOException {
+    private void buildWeightMapParallel(String inputFilePath) throws IOException {
         int processors = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         AtomicInteger byteCount = new AtomicInteger(0);
@@ -103,7 +103,7 @@ public class SingleFileCompressor {
      * @throws IOException 如果发生 I/O 错误
      */
     public void compressFile(String inputFilePath, String targetDirectory) throws IOException {
-        buildFrequencyMapParallel(inputFilePath);
+        buildWeightMapParallel(inputFilePath);
         this.huffmanTree = new HuffmanTree(weightMap);
         this.huffmanCodes = huffmanTree.getHuffmanCodes();
         // 压缩文件
@@ -115,11 +115,7 @@ public class SingleFileCompressor {
         fileName = fileName.substring(0, fileName.lastIndexOf("."));
         String compressedFilePath = targetDirectory + File.separator + fileName + ".hzip";
         log.info("Start compressing file: {}", inputFilePath);
-        try (FileOutputStream fos = new FileOutputStream(compressedFilePath);
-             BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE);
-             Output output = new Output(bos);
-             FileInputStream fis = new FileInputStream(inputFilePath);
-             BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
+        try (FileOutputStream fos = new FileOutputStream(compressedFilePath); BufferedOutputStream bos = new BufferedOutputStream(fos, Constants.BUFFER_SIZE); Output output = new Output(bos); FileInputStream fis = new FileInputStream(inputFilePath); BitOutputStream bitOut = new BitOutputStream(bos, Constants.BUFFER_SIZE)) {
 
             // 存储文件信息
             SingleFileZipInfo singleFileZipInfo = new SingleFileZipInfo();

@@ -37,7 +37,7 @@ public class DirectoryCompressor {
         kryo.register(DirectoryZipInfo.class);
     }
 
-    private void buildFrequencyMapFromDirectory(FileNode node, String basePath) throws IOException {
+    private void buildWeightMapFromDirectory(FileNode node, String basePath) throws IOException {
         String currentPath = basePath + File.separator + node.getName();
         if (node.isFile()) {
             try (FileInputStream fis = new FileInputStream(currentPath)) {
@@ -51,7 +51,7 @@ public class DirectoryCompressor {
             // 如果是目录
             // 递归遍历子节点
             for (FileNode child : node.getChildren()) {
-                buildFrequencyMapFromDirectory(child, currentPath);
+                buildWeightMapFromDirectory(child, currentPath);
             }
         }
     }
@@ -101,7 +101,7 @@ public class DirectoryCompressor {
         String parentPath = file.getParent();
 
         // 记录文件夹结构
-        buildFrequencyMapFromDirectory(rootNode, new File(parentPath).getAbsolutePath());
+        buildWeightMapFromDirectory(rootNode, new File(parentPath).getAbsolutePath());
         // 记录每个文件的大小
         recordFileSizes(rootNode, new File(parentPath).getAbsolutePath());
 

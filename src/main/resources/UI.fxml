@@ -1,32 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.collections.FXCollections?>
+<?import java.lang.*?>
+<?import javafx.collections.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import java.lang.String?>
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="org.example.view.ZipperController"
-            prefHeight="400.0" prefWidth="600.0"
-            stylesheets="style.css">
-    <Label text="选择类型：" layoutX="10" layoutY="14" styleClass="label"/>
-    <ComboBox fx:id="selectionType" layoutX="130" layoutY="10" prefWidth="120" styleClass="combo-box"    >
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="400.0" prefWidth="600.0" stylesheets="style.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.view.ZipperController">
+    <Label layoutX="10" layoutY="14" styleClass="label" text="选择类型：" />
+    <ComboBox fx:id="selectionType" layoutX="130" layoutY="10" prefWidth="120" styleClass="combo-box">
         <items>
             <FXCollections fx:factory="observableArrayList">
-                <String fx:value="文件"/>
-                <String fx:value="文件夹"/>
+                <String fx:value="文件" />
+                <String fx:value="文件夹" />
             </FXCollections>
         </items>
     </ComboBox>
-    <Label text="选择文件/文件夹：" layoutX="10" layoutY="74" styleClass="label"/>
-    <TextField fx:id="filePathField" layoutX="130" layoutY="70" prefWidth="250" styleClass="text-field"/>
-    <Button text="浏览" layoutX="390" layoutY="70" onAction="#handleBrowse"/>
+    <Label layoutX="10" layoutY="74" styleClass="label" text="选择文件/文件夹：" />
+    <TextField fx:id="filePathField" layoutX="130" layoutY="70" prefWidth="250" styleClass="text-field" />
+    <Button layoutX="390" layoutY="70" onAction="#handleBrowse" text="浏览" />
 
-    <Label text="目标目录：" layoutX="10" layoutY="134"/>
-    <TextField fx:id="targetPathField" layoutX="130" layoutY="130" prefWidth="300"/>
-    <Button text="浏览" layoutX="390" layoutY="130" onAction="#handleBrowseTarget"/>
+    <Label layoutX="10" layoutY="134" text="目标目录：" />
+    <TextField fx:id="targetPathField" layoutX="130" layoutY="130" prefWidth="300" />
+    <Button layoutX="390" layoutY="130" onAction="#handleBrowseTarget" text="浏览" />
 
-    <Button fx:id="compress" text="压缩" layoutX="200" layoutY="200" onAction="#handleZip" styleClass="action-button"/>
-    <Button fx:id="decompress" text="解压" layoutX="340" layoutY="200" onAction="#handleZip" styleClass="action-button"/>
-
+    <Button fx:id="compress" layoutX="200" layoutY="200" onAction="#handleZip" styleClass="action-button" text="压缩" />
+    <Button fx:id="decompress" layoutX="340" layoutY="200" onAction="#handleZip" styleClass="action-button" text="解压" />
+   <Pane prefHeight="200.0" prefWidth="200.0" />
 </AnchorPane>

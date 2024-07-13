@@ -15,7 +15,7 @@ import org.example.util.FileUtil;
 
 import java.io.File;
 
-import static org.example.util.FileUtil.FileTypeReader;
+import static org.example.util.FileUtil.fileOperator;
 
 
 public class ZipperController {
@@ -70,15 +70,15 @@ public class ZipperController {
         }
 
         // 创建任务并在新线程中运行 防止界面卡死
-        Task<Void> unzipTask = new Task<>() {
+        Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
                 try {
                     FileUtil.getFileInfo(filePath, targetPath);
                     if (event.getSource() == compress) {
-                        FileTypeReader(filePath, OperateType.COMPRESS);
+                        fileOperator(filePath, OperateType.COMPRESS);
                     } else if (event.getSource() == decompress) {
-                        FileTypeReader(filePath, OperateType.DECOMPRESS);
+                        fileOperator(filePath, OperateType.DECOMPRESS);
                     }
                 } catch (Exception e) {
                     Platform.runLater(() -> showAlert("操作失败", "文件处理过程中出现错误: " + e.getMessage()));
@@ -87,7 +87,7 @@ public class ZipperController {
             }
         };
 
-        new Thread(unzipTask).start();
+        new Thread(task).start();
     }
 
     /**

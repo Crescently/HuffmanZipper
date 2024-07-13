@@ -34,12 +34,12 @@ public class FileUtil {
     }
 
     /**
-     * 文件类型识别
+     * 文件操作
      *
      * @param filePath   文件路径
      * @param chosenType 操作类型
      */
-    public static void FileTypeReader(String filePath, OperateType chosenType) {
+    public static void fileOperator(String filePath, OperateType chosenType) {
         File file = new File(filePath);
         if (!file.exists()) {
             log.error("The path does not exist.");

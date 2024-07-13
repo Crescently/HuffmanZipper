@@ -10,7 +10,7 @@
 }
 
 .action-button {
-    -fx-background-color: #4CAF50;
+    -fx-background-color: skyblue;
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-padding: 8px 16px;

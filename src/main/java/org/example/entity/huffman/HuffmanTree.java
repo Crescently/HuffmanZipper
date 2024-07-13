@@ -19,11 +19,11 @@ public class HuffmanTree implements Serializable {
     /**
      * 根节点
      */
-    private HuffmanNode root;
+    private final HuffmanNode root;
     /**
      * 哈夫曼编码
      */
-    private Map<Byte, String> huffmanCodes;
+    private final Map<Byte, String> huffmanCodes;
 
     /**
      * 根据权重构建哈夫曼树
